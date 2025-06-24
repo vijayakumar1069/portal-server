@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
-
+import authRoutes from './routes/auth';
 
 // Load environment variables
 dotenv.config();
@@ -19,9 +19,16 @@ connectDB();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    process.env.FRONTEND_PRODUCTION_URL || 'http://localhost:3000',
+  ],
   credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  exposedHeaders: ["Set-Cookie"],
 }));
+
 
 // Rate limiting
 const limiter = rateLimit({
@@ -44,6 +51,8 @@ app.get('/health', (req, res) => {
   });
 });
 
+
+app.use('/api/auth', authRoutes);
 
 
 // 404 handler
