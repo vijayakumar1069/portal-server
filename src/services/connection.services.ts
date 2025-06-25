@@ -96,32 +96,51 @@ export class HubSpotService {
   }
   async getContactByEmail(email: string): Promise<HubSpotContact | null> {
     try {
-      const response = await this.api.get('/crm/v3/objects/contacts/search', {
-        data: {
-          filterGroups: [{
-            filters: [{
-              value: email,
-              propertyName: 'email',
-              operator: 'EQ'
-            }]
-          }],
-          properties: [
-            'email',
-            'firstname',
-            'lastname',
-            'lifecyclestage',
-            'phone',
-            'company',
-            'createdate',
-            'lastmodifieddate'
-          ]
-        }
-      });
+   
+      
+      const searchPayload = {
+        filterGroups: [{
+          filters: [{
+            value: email,
+            propertyName: 'email',
+            operator: 'EQ'
+          }]
+        }],
+        properties: [
+          'email',
+          'firstname',
+          'lastname',
+          'lifecyclestage',
+          'phone',
+          'company',
+          'createdate',
+          'lastmodifieddate'
+        ]
+      };
+
+ 
+
+      const response = await this.api.post('/crm/v3/objects/contacts/search', searchPayload);
+
 
       const contacts = response.data.results;
-      return contacts.length > 0 ? contacts[0] : null;
+      
+      if (!contacts || contacts.length === 0) {
+       
+        return null;
+      }
+
+      const foundContact = contacts[0];
+   
+
+    
+      
+      return foundContact;
     } catch (error) {
-      console.error('Error fetching HubSpot contact:', error);
+    
+      
+      
+      
       return null;
     }
   }
