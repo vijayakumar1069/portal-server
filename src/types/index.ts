@@ -85,3 +85,13 @@ export interface HubSpotContact {
     lastmodifieddate: string;
   };
 }
+
+export interface IWebhookLog extends Document {
+  userId: string;
+  event: string;
+  payload: any;
+  timestamp: Date;
+  source: 'freshdesk' | 'hubspot';
+  createdAt?: Date;
+  updatedAt?: Date;
+}
