@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { AuthRequest, IntegrationRequest } from "../types";
-import { User } from "../models/user";
-import { FreshdeskService, HubSpotService } from "../services/connection.services";
+import { User } from "../models/user.js";
+import { FreshdeskService, HubSpotService } from "../services/connection.services.js";
 
 
 export const freshdeskIntegrationSaveController: RequestHandler = async (req: AuthRequest, res) => {

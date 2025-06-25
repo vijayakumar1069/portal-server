@@ -1,11 +1,11 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth.js';
 import {
     getTicketContactController,
     getTicketDetailsController,
   getTicketsController,
 
-} from '../controllers/ticket.controller';
+} from '../controllers/ticket.controller.js';
 
 const ticketRoutes = express.Router();
 

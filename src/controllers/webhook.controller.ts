@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 
 import { AuthRequest } from "../types";
-import { WebhookLog } from "../models/webHookLog";
+import { WebhookLog } from "../models/webHookLog.js";
 
 export const handleFreshdeskWebhook = async (req: AuthRequest, res: Response) => {
   try {

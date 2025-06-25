@@ -1,7 +1,7 @@
 import { Response } from 'express';
-import { User } from '../models/user';
+import { User } from '../models/user.js';
 import { AuthRequest } from '../types';
-import { FreshdeskService, HubSpotService } from '../services/connection.services';
+import { FreshdeskService, HubSpotService } from '../services/connection.services.js';
 
 export const getTicketsController = async (req: AuthRequest, res: Response) => {
   try {

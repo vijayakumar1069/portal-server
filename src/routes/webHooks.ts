@@ -1,13 +1,13 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth.js';
 import {
 
   handleFreshdeskWebhook,
  
   getWebhookLogs,
   getWebhookStats
-} from '../controllers/webhook.controller';
-import { verifyFreshdeskWebhook } from '../middleware/verifyFreshdeskWebhook';
+} from '../controllers/webhook.controller.js';
+import { verifyFreshdeskWebhook } from '../middleware/verifyFreshdeskWebhook.js';
 
 const webhookRoutes = express.Router();
 

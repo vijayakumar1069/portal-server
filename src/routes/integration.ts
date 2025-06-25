@@ -1,8 +1,8 @@
 import express from 'express';
 
-import { authenticateToken } from '../middleware/auth';
-import { integrationValidation, handleValidationErrors } from '../middleware/validation';
-import { freshdeskIntegrationSaveController, hubspotIntegrationSaveController, integrationStatusController } from '../controllers/intergration.controller';
+import { authenticateToken } from '../middleware/auth.js';
+import { integrationValidation, handleValidationErrors } from '../middleware/validation.js';
+import { freshdeskIntegrationSaveController, hubspotIntegrationSaveController, integrationStatusController } from '../controllers/intergration.controller.js';
 
 
 const integrationRoutes = express.Router();

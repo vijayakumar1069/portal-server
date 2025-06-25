@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import { AuthRequest, LoginRequest, SignupRequest } from "../types";
-import { User } from "../models/user";
+import { User } from "../models/user.js";
 import type { StringValue } from "ms";
 export const signupController: RequestHandler = async (req, res) => {
   try {

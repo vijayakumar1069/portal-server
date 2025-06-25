@@ -1,11 +1,11 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 
 import { 
   signupValidation, 
   loginValidation, 
   handleValidationErrors 
-} from '../middleware/validation';
-import { authenticateToken } from '../middleware/auth';
+} from '../middleware/validation.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 import { getUserController, loginController, signupController } from '../controllers/auth.controller.js';
 
