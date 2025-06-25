@@ -46,3 +46,42 @@ export interface IntegrationRequest {
   freshdeskDomain?: string;
   hubspotAccessToken?: string;
 }
+export interface FreshdeskTicket {
+  id: number;
+  subject: string;
+  status: number;
+  priority: number;
+  requester_id: number;
+  requester: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  created_at: string;
+  updated_at: string;
+  description: string;
+}
+export interface FreshdeskConversation {
+  id: number;
+  body: string;
+  body_text: string;
+  from_email: string;
+  to_emails: string[];
+  created_at: string;
+  updated_at: string;
+  private: boolean;
+  user_id?: number;
+}
+export interface HubSpotContact {
+  id: string;
+  properties: {
+    email: string;
+    firstname?: string;
+    lastname?: string;
+    lifecyclestage?: string;
+    phone?: string;
+    company?: string;
+    createdate: string;
+    lastmodifieddate: string;
+  };
+}
