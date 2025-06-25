@@ -40,3 +40,9 @@ export interface ApiResponse<T = any> {
   token?: string;
 }
 
+
+export interface IntegrationRequest {
+  freshdeskApiKey?: string;
+  freshdeskDomain?: string;
+  hubspotAccessToken?: string;
+}
