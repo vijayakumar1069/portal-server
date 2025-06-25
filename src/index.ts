@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
-import authRoutes from './routes/auth';
+import authRoutes from './routes/auth.js';
 import integrationRoutes from './routes/integration.js';
 import ticketRoutes from './routes/tickets.js';
 import webhookRoutes from './routes/webHooks.js';
