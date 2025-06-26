@@ -25,14 +25,15 @@ export const handleFreshdeskWebhook = async (req: AuthRequest, res: Response) =>
       product_name,
       custom_fields
     } = req.body;
+    console.log('Received Freshdesk webhook:', req.body);
 
-    console.log('Received Freshdesk webhook:', {
-      event: webhook?.event_type,
-      ticket_id,
-      ticket_status,
-      requester_email,
-      rawBody: JSON.stringify(req.body, null, 2)
-    });
+    // console.log('Received Freshdesk webhook:', {
+    //   event: webhook?.event_type,
+    //   ticket_id,
+    //   ticket_status,
+    //   requester_email,
+    //   rawBody: JSON.stringify(req.body, null, 2)
+    // });
 
     // For webhooks, we don't have authenticated user context
     // You might want to derive userId from custom_fields or other ticket data
