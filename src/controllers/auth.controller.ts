@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { AuthRequest, LoginRequest, SignupRequest } from "../types";
 import { User } from "../models/user.js";
 import type { StringValue } from "ms";
-import { BlacklistedToken } from "../models/blackListedToken";
+import { BlacklistedToken } from "../models/blackListedToken.js";
 export const signupController: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { email, password }: SignupRequest = req.body;
