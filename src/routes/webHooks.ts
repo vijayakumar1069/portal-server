@@ -5,7 +5,7 @@ import {
    getWebhookLogs,
    getWebhookStats
 } from '../controllers/webhook.controller.js';
-import { verifyFreshdeskWebhook } from '../middleware/verifyFreshdeskWebhook.js';
+// import { verifyFreshdeskWebhook } from '../middleware/verifyFreshdeskWebhook.js';
 
 const webhookRoutes = express.Router();
 
@@ -13,7 +13,7 @@ const webhookRoutes = express.Router();
 webhookRoutes.use('/freshdesk', express.raw({ type: 'application/json' }));
 
 // Freshdesk will POST to this endpoint
-webhookRoutes.post('/freshdesk', verifyFreshdeskWebhook, handleFreshdeskWebhook);
+webhookRoutes.post('/freshdesk', handleFreshdeskWebhook);
 
 // Webhook logs endpoints (authenticated)
 webhookRoutes.get('/logs/:userId', authenticateToken, getWebhookLogs);
