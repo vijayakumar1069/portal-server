@@ -1,141 +1,171 @@
 import { Request, Response } from "express";
-
 import { AuthRequest } from "../types";
 import { WebhookLog } from "../models/webHookLog.js";
+import { User } from "../models/user.js";
 
 
 export const handleFreshdeskWebhook = async (req: AuthRequest, res: Response) => {
   try {
-    const { 
-      freshdesk_webhook: webhook,
-      ticket_id,
-      ticket_url,
-      ticket_subject,
-      ticket_description,
-      ticket_status,
-      ticket_priority,
-      ticket_created_at,
-      ticket_updated_at,
-      requester_email,
-      requester_name,
-      requester_phone,
-      agent_email,
-      agent_name,
-      group_name,
-      product_name,
-      custom_fields
-    } = req.body;
-    console.log('Received Freshdesk webhook:', req.body);
-
-    console.log('Received Freshdesk webhook:', {
-      event: webhook?.event_type,
-      ticket_id,
-      ticket_status,
-      requester_email,
-      rawBody: JSON.stringify(req.body, null, 2)
-    });
-
-    // For webhooks, we don't have authenticated user context
-    // You might want to derive userId from custom_fields or other ticket data
-    let userId = 'system'; // Default fallback
+    console.log('=== RAW WEBHOOK PAYLOAD ===');
+    console.log('Full request body:', JSON.stringify(req.body, null, 2));
     
-    // Try to get userId from custom fields if available
-    if (custom_fields && typeof custom_fields === 'object') {
-      userId = custom_fields.user_id || custom_fields.userId || 'system';
+    // Extract data from the actual webhook structure
+    const {
+      event_type,
+      ticket,
+      requester,
+      agent,
+      changes
+    } = req.body;
+
+    console.log('=== EXTRACTED WEBHOOK DATA ===');
+    console.log('Event type:', event_type);
+    console.log('Ticket data:', ticket);
+    console.log('Requester data:', requester);
+    console.log('Agent data:', agent);
+    console.log('Changes data:', changes);
+
+    // For webhooks, we need to find the user by email
+    let userId = 'system'; // Default fallback
+    let userFound = false;
+
+    console.log('=== USER LOOKUP PROCESS ===');
+    
+    if (requester && requester.email) {
+      console.log('Looking up user by email:', requester.email);
+      
+      try {
+        const user = await User.findOne({ email: requester.email }).lean();
+        console.log('User lookup result:', user ? `Found user: ${user._id}` : 'No user found');
+        
+        if (user) {
+          userId = user._id.toString();
+          userFound = true;
+          console.log('Using userId from database:', userId);
+        } else {
+          console.log('User not found in database, using system fallback');
+        }
+      } catch (userLookupError) {
+        console.error('Error looking up user:', userLookupError);
+        console.log('Using system fallback due to lookup error');
+      }
+    } else {
+      console.log('No requester email found in webhook payload');
     }
 
-    console.log('Using userId:', userId);
+    console.log('=== FINAL USER CONTEXT ===');
+    console.log('Final userId:', userId);
+    console.log('User found in database:', userFound);
 
     // Log the webhook event to database
-    const webhookLog = await WebhookLog.create({
+    console.log('=== LOGGING WEBHOOK TO DATABASE ===');
+    const webhookLogData = {
       userId: userId,
-      event: webhook?.event_type || 'unknown',
-      payload: req.body,
+      event: event_type || 'unknown',
+      payload: {
+        ...req.body,
+        processedAt: new Date(),
+        userLookupStatus: userFound ? 'found' : 'not_found',
+        requesterEmail: requester?.email || 'unknown'
+      },
       source: 'freshdesk',
       timestamp: new Date()
-    });
-
-    console.log('Webhook logged to database:', webhookLog._id);
+    };
+    
+    console.log('Webhook log data to save:', JSON.stringify(webhookLogData, null, 2));
+    
+    const webhookLog = await WebhookLog.create(webhookLogData);
+    console.log('Webhook logged to database with ID:', webhookLog._id);
 
     // Handle different webhook events
-    switch (webhook?.event_type) {
+    console.log('=== PROCESSING WEBHOOK EVENT ===');
+    console.log('Processing event type:', event_type);
+    
+    switch (event_type) {
       case 'ticket_created':
         await handleTicketCreated({
-          ticket_id,
-          ticket_url,
-          ticket_subject,
-          ticket_description,
-          ticket_status,
-          ticket_priority,
-          ticket_created_at,
-          requester_email,
-          requester_name,
-          requester_phone,
-          agent_email,
-          agent_name,
-          group_name,
-          product_name,
-          custom_fields
+          ticket_id: ticket?.id,
+          ticket_url: ticket?.url,
+          ticket_subject: ticket?.subject,
+          ticket_description: ticket?.description,
+          ticket_status: ticket?.status,
+          ticket_priority: ticket?.priority,
+          ticket_created_at: ticket?.created_at,
+          ticket_updated_at: ticket?.updated_at,
+          requester_email: requester?.email,
+          requester_name: requester?.name,
+          requester_phone: requester?.phone,
+          agent_email: agent?.email,
+          agent_name: agent?.name,
+          group_name: ticket?.group_name,
+          product_name: ticket?.product_name,
+          custom_fields: ticket?.custom_fields
         }, userId);
         break;
         
       case 'ticket_updated':
         await handleTicketUpdated({
-          ticket_id,
-          ticket_url,
-          ticket_subject,
-          ticket_status,
-          ticket_priority,
-          ticket_updated_at,
-          requester_email,
-          agent_email,
-          agent_name,
-          custom_fields
+          ticket_id: ticket?.id,
+          ticket_url: ticket?.url,
+          ticket_subject: ticket?.subject,
+          ticket_status: ticket?.status,
+          ticket_priority: ticket?.priority,
+          ticket_updated_at: ticket?.updated_at,
+          requester_email: requester?.email,
+          agent_email: agent?.email,
+          agent_name: agent?.name,
+          custom_fields: ticket?.custom_fields
         }, userId);
         break;
         
       case 'ticket_resolved':
         await handleTicketResolved({
-          ticket_id,
-          ticket_url,
-          ticket_subject,
-          ticket_status,
-          requester_email,
-          agent_email,
-          agent_name
+          ticket_id: ticket?.id,
+          ticket_url: ticket?.url,
+          ticket_subject: ticket?.subject,
+          ticket_status: ticket?.status,
+          requester_email: requester?.email,
+          agent_email: agent?.email,
+          agent_name: agent?.name
         }, userId);
         break;
         
       case 'ticket_closed':
         await handleTicketClosed({
-          ticket_id,
-          ticket_url,
-          ticket_subject,
-          ticket_status,
-          requester_email,
-          agent_email,
-          agent_name
+          ticket_id: ticket?.id,
+          ticket_url: ticket?.url,
+          ticket_subject: ticket?.subject,
+          ticket_status: ticket?.status,
+          requester_email: requester?.email,
+          agent_email: agent?.email,
+          agent_name: agent?.name
         }, userId);
         break;
         
       default:
-        console.log('Unhandled webhook event:', webhook?.event_type);
+        console.log('Unhandled webhook event:', event_type);
     }
 
+    console.log('=== WEBHOOK PROCESSING COMPLETE ===');
+    
     // Return success response with webhook log ID
     res.status(200).json({
       success: true,
       message: 'Webhook received and processed successfully',
       data: {
         webhookLogId: webhookLog._id,
-        event: webhook?.event_type,
-        ticketId: ticket_id,
+        event: event_type,
+        ticketId: ticket?.id,
+        userId: userId,
+        userFound: userFound,
+        requesterEmail: requester?.email,
         processedAt: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    console.error('=== WEBHOOK PROCESSING ERROR ===');
+    console.error('Error details:', error);
     
     // Try to log the error to database as well
     try {
@@ -151,6 +181,7 @@ export const handleFreshdeskWebhook = async (req: AuthRequest, res: Response) =>
         source: 'freshdesk',
         timestamp: new Date()
       });
+      console.log('Error logged to database successfully');
     } catch (logError) {
       console.error('Failed to log error to database:', logError);
     }
@@ -165,13 +196,15 @@ export const handleFreshdeskWebhook = async (req: AuthRequest, res: Response) =>
   }
 };
 
-// Updated helper functions with better error handling
+// Updated helper functions with better error handling and logging
 const handleTicketCreated = async (ticketData: any, userId: string) => {
-  console.log('Processing ticket created event:', ticketData.ticket_id);
+  console.log('=== PROCESSING TICKET CREATED ===');
+  console.log('Ticket ID:', ticketData.ticket_id);
+  console.log('User ID:', userId);
   
   try {
     // Store additional event-specific data
-    await WebhookLog.create({
+    const logData = {
       userId,
       event: 'ticket_created_processed',
       payload: {
@@ -184,9 +217,13 @@ const handleTicketCreated = async (ticketData: any, userId: string) => {
       },
       source: 'freshdesk',
       timestamp: new Date()
-    });
+    };
     
-    console.log(`Ticket ${ticketData.ticket_id} created successfully processed`);
+    console.log('Saving ticket created log:', JSON.stringify(logData, null, 2));
+    
+    await WebhookLog.create(logData);
+    
+    console.log(`Ticket ${ticketData.ticket_id} created successfully processed for user ${userId}`);
     
   } catch (error) {
     console.error('Error handling ticket created event:', error);
@@ -209,10 +246,12 @@ const handleTicketCreated = async (ticketData: any, userId: string) => {
 };
 
 const handleTicketUpdated = async (ticketData: any, userId: string) => {
-  console.log('Processing ticket updated event:', ticketData.ticket_id);
+  console.log('=== PROCESSING TICKET UPDATED ===');
+  console.log('Ticket ID:', ticketData.ticket_id);
+  console.log('User ID:', userId);
   
   try {
-    await WebhookLog.create({
+    const logData = {
       userId,
       event: 'ticket_updated_processed',
       payload: {
@@ -223,7 +262,13 @@ const handleTicketUpdated = async (ticketData: any, userId: string) => {
       },
       source: 'freshdesk',
       timestamp: new Date()
-    });
+    };
+    
+    console.log('Saving ticket updated log:', JSON.stringify(logData, null, 2));
+    
+    await WebhookLog.create(logData);
+    
+    console.log(`Ticket ${ticketData.ticket_id} updated successfully processed for user ${userId}`);
     
   } catch (error) {
     console.error('Error handling ticket updated event:', error);
@@ -232,10 +277,12 @@ const handleTicketUpdated = async (ticketData: any, userId: string) => {
 };
 
 const handleTicketResolved = async (ticketData: any, userId: string) => {
-  console.log('Processing ticket resolved event:', ticketData.ticket_id);
+  console.log('=== PROCESSING TICKET RESOLVED ===');
+  console.log('Ticket ID:', ticketData.ticket_id);
+  console.log('User ID:', userId);
   
   try {
-    await WebhookLog.create({
+    const logData = {
       userId,
       event: 'ticket_resolved_processed',
       payload: {
@@ -247,7 +294,13 @@ const handleTicketResolved = async (ticketData: any, userId: string) => {
       },
       source: 'freshdesk',
       timestamp: new Date()
-    });
+    };
+    
+    console.log('Saving ticket resolved log:', JSON.stringify(logData, null, 2));
+    
+    await WebhookLog.create(logData);
+    
+    console.log(`Ticket ${ticketData.ticket_id} resolved successfully processed for user ${userId}`);
     
   } catch (error) {
     console.error('Error handling ticket resolved event:', error);
@@ -256,10 +309,12 @@ const handleTicketResolved = async (ticketData: any, userId: string) => {
 };
 
 const handleTicketClosed = async (ticketData: any, userId: string) => {
-  console.log('Processing ticket closed event:', ticketData.ticket_id);
+  console.log('=== PROCESSING TICKET CLOSED ===');
+  console.log('Ticket ID:', ticketData.ticket_id);
+  console.log('User ID:', userId);
   
   try {
-    await WebhookLog.create({
+    const logData = {
       userId,
       event: 'ticket_closed_processed',
       payload: {
@@ -271,15 +326,19 @@ const handleTicketClosed = async (ticketData: any, userId: string) => {
       },
       source: 'freshdesk',
       timestamp: new Date()
-    });
+    };
+    
+    console.log('Saving ticket closed log:', JSON.stringify(logData, null, 2));
+    
+    await WebhookLog.create(logData);
+    
+    console.log(`Ticket ${ticketData.ticket_id} closed successfully processed for user ${userId}`);
     
   } catch (error) {
     console.error('Error handling ticket closed event:', error);
     throw error;
   }
 };
-
-
 
 // Get webhook logs for a user
 export const getWebhookLogs = async (req: Request, res: Response) => {
@@ -293,6 +352,10 @@ export const getWebhookLogs = async (req: Request, res: Response) => {
       startDate,
       endDate 
     } = req.query;
+
+    console.log('=== FETCHING WEBHOOK LOGS ===');
+    console.log('User ID:', userId);
+    console.log('Filters:', { page, limit, event, source, startDate, endDate });
 
     // Build filter
     const filter: any = { userId };
@@ -315,6 +378,8 @@ export const getWebhookLogs = async (req: Request, res: Response) => {
       }
     }
 
+    console.log('Database filter:', JSON.stringify(filter, null, 2));
+
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
     
     const [logs, total] = await Promise.all([
@@ -325,6 +390,9 @@ export const getWebhookLogs = async (req: Request, res: Response) => {
         .lean(),
       WebhookLog.countDocuments(filter)
     ]);
+
+    console.log('Found logs count:', logs.length);
+    console.log('Total logs:', total);
 
     res.json({
       success: true,
@@ -355,8 +423,14 @@ export const getWebhookStats = async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { days = 30 } = req.query;
     
+    console.log('=== GENERATING WEBHOOK STATS ===');
+    console.log('User ID:', userId);
+    console.log('Days:', days);
+    
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(days as string));
+    
+    console.log('Date range:', startDate, 'to', new Date());
     
     const stats = await WebhookLog.aggregate([
       {
@@ -380,6 +454,8 @@ export const getWebhookStats = async (req: Request, res: Response) => {
       }
     ]);
 
+    console.log('Generated stats:', JSON.stringify(stats, null, 2));
+
     res.json({
       success: true,
       message: 'Webhook statistics retrieved successfully',
@@ -398,4 +474,3 @@ export const getWebhookStats = async (req: Request, res: Response) => {
     });
   }
 };
-
