@@ -7,7 +7,7 @@ import {
 } from '../middleware/validation.js';
 import { authenticateToken } from '../middleware/auth.js';
 
-import {  loginController, signupController } from '../controllers/auth.controller.js';
+import {  loginController, logoutController, signupController } from '../controllers/auth.controller.js';
 
 
 const authRoutes = express.Router();
@@ -22,6 +22,6 @@ authRoutes.post(
 // Login
 authRoutes.post('/signin', loginValidation, handleValidationErrors, loginController);
 
-
+authRoutes.post('/logout', authenticateToken, logoutController)
 
 export default authRoutes;

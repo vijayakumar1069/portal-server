@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { AuthRequest, LoginRequest, SignupRequest } from "../types";
 import { User } from "../models/user.js";
 import type { StringValue } from "ms";
+import { BlacklistedToken } from "../models/blackListedToken";
 export const signupController: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { email, password }: SignupRequest = req.body;
@@ -119,12 +120,13 @@ export const loginController: RequestHandler = async (req, res): Promise<void> =
 
 export const logoutController: RequestHandler = async (req, res): Promise<void> => {
   try {
-    const token = req.body.token;
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
 
     if (!token) {
       res.status(401).json({
         success: false,
-        message: 'Access token required'
+        message: 'Access token required',
       });
       return;
     }
@@ -133,36 +135,34 @@ export const logoutController: RequestHandler = async (req, res): Promise<void> 
     if (!jwtSecret) {
       res.status(500).json({
         success: false,
-        message: 'Server configuration error'
+        message: 'Server configuration error',
       });
       return;
     }
 
-    const decoded = jwt.verify(token, jwtSecret) as { userId: string; email: string };
+    // Decode the token to get expiry
+    const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload & { userId: string; email: string };
+    
+    // Save token to blacklist with its expiry
+    const expiresAt = new Date((decoded.exp || 0) * 1000); // convert exp (in seconds) to milliseconds
 
-    // Verify user still exists
+    await BlacklistedToken.create({ token, expiresAt });
+
+    // Optional: You may also log or track the user who logged out
     const user = await User.findById(decoded.userId);
-    if (!user) {
-      res.status(401).json({
-        success: false,
-        message: 'User not found'
-      });
-      return;
-    }
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: 'Logout successful',
       data: {
-        user: user.toJSON(),
+        user: user?.toJSON(),
       },
-      token: null
     });
   } catch (error) {
     console.error('Logout error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to logout'
+      message: 'Failed to logout',
     });
   }
 };

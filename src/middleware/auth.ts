@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.js';
 import { AuthRequest } from '../types';
+import { BlacklistedToken } from '../models/blackListedToken.js';
 
 export const authenticateToken = async (
   req: AuthRequest,
@@ -27,6 +28,10 @@ export const authenticateToken = async (
         message: 'Server configuration error'
       });
       return;
+    }
+     const blacklistedToken = await BlacklistedToken.findOne({ token });
+    if (blacklistedToken) {
+       res.status(401).json({ success: false, message: 'Token has been revoked' });
     }
 
     const decoded = jwt.verify(token, jwtSecret) as { userId: string; email: string };
