@@ -1,6 +1,6 @@
 import { RequestHandler, Response } from 'express';
 import { User } from '../models/user.js';
-import { AuthRequest } from '../types';
+import { AuthRequest, HubSpotContact } from '../types';
 import { FreshdeskService, HubSpotService } from '../services/connection.services.js';
 
 export const getTicketsController = async (req:AuthRequest, res:Response): Promise<void> => {
@@ -111,7 +111,7 @@ export const getTicketContactController = async (req: AuthRequest, res: Response
       return;
     }
 
-    let contact = null;
+    let contact: HubSpotContact | null = null;
 
     if (user.hubspotAccessToken) {
       const hubspotService = new HubSpotService(user.hubspotAccessToken);

@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import integrationRoutes from './routes/integration.js';
 import ticketRoutes from './routes/tickets.js';
 import webhookRoutes from './routes/webHooks.js';
+import { Request, Response } from 'express';
 
 // Load environment variables
 dotenv.config();
@@ -46,7 +47,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (req:Request, res:Response) => {
   res.status(200).json({
     success: true,
     message: 'Server is running',
@@ -62,7 +63,7 @@ app.use('/api/webhooks', webhookRoutes);
 
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (req:Request, res:Response) => {
   res.status(404).json({
     success: false,
     message: 'Route not found',
