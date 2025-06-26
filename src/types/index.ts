@@ -1,5 +1,8 @@
-import { Request } from 'express';
+import { Request, Response, NextFunction  } from 'express';
 import { Document } from 'mongoose';
+
+
+
 
 // User interfaces
 export interface IUser extends Document {
@@ -12,6 +15,7 @@ export interface IUser extends Document {
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
 }
+
 
 // Request interfaces
 export interface AuthRequest extends Request {

@@ -3,16 +3,17 @@ import jwt from "jsonwebtoken";
 import { AuthRequest, LoginRequest, SignupRequest } from "../types";
 import { User } from "../models/user.js";
 import type { StringValue } from "ms";
-export const signupController: RequestHandler = async (req, res) => {
+export const signupController: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { email, password }: SignupRequest = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
+       res.status(400).json({
         success: false,
         message: "User already exists with this email",
       });
+      return;
     }
 
     const user = new User({ email, password });
@@ -23,10 +24,11 @@ export const signupController: RequestHandler = async (req, res) => {
 
     // ✅ Validate types
     if (!jwtSecret) {
-      return res.status(500).json({
+       res.status(500).json({
         success: false,
         message: "Server configuration error",
       });
+      return;
     }
 
     // ✅ Ensure correct typing for both secret and options
@@ -55,36 +57,39 @@ export const signupController: RequestHandler = async (req, res) => {
   }
 };
 
-export const loginController: RequestHandler = async (req, res) => {
+export const loginController: RequestHandler = async (req, res): Promise<void> => {
     try {
     const { email, password }: LoginRequest = req.body;
 
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({
+       res.status(400).json({
         success: false,
         message: 'Invalid email or password'
       });
+      return;
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(400).json({
+       res.status(400).json({
         success: false,
         message: 'Invalid email or password'
       });
+      return;
     }
 
     
     const jwtSecret = process.env.JWT_SECRET;
     const jwtExpiresIn = process.env.JWT_EXPIRES_IN as StringValue || "7d";
     if (!jwtSecret) {
-      return res.status(500).json({
+       res.status(500).json({
         success: false,
         message: 'Server configuration error'
       });
+      return;
     }
 
     const token = jwt.sign(
@@ -112,14 +117,15 @@ export const loginController: RequestHandler = async (req, res) => {
   }
 }
 
-export const getUserController: RequestHandler = async (req:AuthRequest, res) => {
+export const getUserController: RequestHandler = async (req:AuthRequest, res): Promise<void> => {
     try {
     const user = await User.findById(req.user?.userId);
     if (!user) {
-      return res.status(404).json({
+       res.status(404).json({
         success: false,
         message: 'User not found'
       });
+      return;
     }
 
     res.json({

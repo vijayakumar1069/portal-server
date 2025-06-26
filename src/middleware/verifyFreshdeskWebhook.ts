@@ -1,7 +1,7 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import crypto from 'crypto';
 
-export const verifyFreshdeskWebhook = (req: Request, res: Response, next: Function) => {
+export const verifyFreshdeskWebhook = (req: Request, res: Response, next: NextFunction): void => {
   try {
     const signature = req.headers['x-freshdesk-signature'] as string;
     const webhookSecret = process.env.FRESHDESK_WEBHOOK_SECRET;
@@ -22,21 +22,24 @@ export const verifyFreshdeskWebhook = (req: Request, res: Response, next: Functi
       
       if (signature !== expectedSignature) {
         console.log("Signature mismatch!");
-        return res.status(401).json({
+        res.status(401).json({
           success: false,
           message: 'Invalid webhook signature'
         });
+        return; // Important: return void, don't return the response
       }
       
       // Parse the JSON after signature verification
       try {
         req.body = JSON.parse(rawBody.toString());
+        console.log("Parsed JSON:", req.body);
       } catch (parseError) {
         console.error("JSON parse error:", parseError);
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Invalid JSON payload'
         });
+        return; // Important: return void, don't return the response
       }
     } else {
       console.log("Skipping signature verification - missing secret or signature");
@@ -46,10 +49,11 @@ export const verifyFreshdeskWebhook = (req: Request, res: Response, next: Functi
           req.body = JSON.parse(req.body.toString());
         } catch (parseError) {
           console.error("JSON parse error:", parseError);
-          return res.status(400).json({
+          res.status(400).json({
             success: false,
             message: 'Invalid JSON payload'
           });
+          return; // Important: return void, don't return the response
         }
       }
     }
@@ -62,5 +66,6 @@ export const verifyFreshdeskWebhook = (req: Request, res: Response, next: Functi
       success: false,
       message: 'Webhook verification failed'
     });
+    return; // Important: return void, don't return the response
   }
 };

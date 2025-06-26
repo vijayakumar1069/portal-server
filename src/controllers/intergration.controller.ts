@@ -4,24 +4,26 @@ import { User } from "../models/user.js";
 import { FreshdeskService, HubSpotService } from "../services/connection.services.js";
 
 
-export const freshdeskIntegrationSaveController: RequestHandler = async (req: AuthRequest, res) => {
+export const freshdeskIntegrationSaveController = async (req: AuthRequest, res: any): Promise<void> => {
   try {
     const userId = req.user?.userId;
     const { freshdeskApiKey, freshdeskDomain } = req.body;
 
     if (!freshdeskApiKey || !freshdeskDomain) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Freshdesk API key and domain are required",
       });
+      return;
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: "User not found",
       });
+      return;
     }
 
     // Test Freshdesk connection
@@ -29,10 +31,11 @@ export const freshdeskIntegrationSaveController: RequestHandler = async (req: Au
     const isConnected = await freshdeskService.testConnection();
 
     if (!isConnected) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Failed to connect to Freshdesk. Invalid credentials.",
       });
+      return;
     }
 
     // Save credentials
@@ -56,24 +59,26 @@ export const freshdeskIntegrationSaveController: RequestHandler = async (req: Au
     });
   }
 };
-export const hubspotIntegrationSaveController: RequestHandler = async (req: AuthRequest, res) => {
+export const hubspotIntegrationSaveController: RequestHandler = async (req: AuthRequest, res): Promise<void> => {
   try {
     const userId = req.user?.userId;
     const { hubspotAccessToken } = req.body;
 
     if (!hubspotAccessToken) {
-      return res.status(400).json({
+       res.status(400).json({
         success: false,
         message: "HubSpot Access Token is required",
       });
+      return;
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
+       res.status(404).json({
         success: false,
         message: "User not found",
       });
+      return;
     }
 
     // Test HubSpot connection
@@ -81,10 +86,11 @@ export const hubspotIntegrationSaveController: RequestHandler = async (req: Auth
     const isConnected = await hubspotService.testConnection();
 
     if (!isConnected) {
-      return res.status(400).json({
+       res.status(400).json({
         success: false,
         message: "Failed to connect to HubSpot. Invalid token.",
       });
+      return;
     }
 
     // Save credentials
@@ -106,16 +112,17 @@ export const hubspotIntegrationSaveController: RequestHandler = async (req: Auth
     });
   }
 };
-export const integrationStatusController: RequestHandler = async (req: AuthRequest, res) => {
+export const integrationStatusController: RequestHandler = async (req: AuthRequest, res): Promise<void> => {
      try {
     const userId = req.user?.userId;
     const user = await User.findById(userId);
     
     if (!user) {
-      return res.status(404).json({
+       res.status(404).json({
         success: false,
         message: 'User not found'
       });
+      return;
     }
 
     res.json({
@@ -135,5 +142,6 @@ export const integrationStatusController: RequestHandler = async (req: AuthReque
       success: false,
       message: 'Failed to get integration status'
     });
+    return;
   }
 }

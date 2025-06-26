@@ -1,18 +1,20 @@
-import { Response } from 'express';
+import { RequestHandler, Response } from 'express';
 import { User } from '../models/user.js';
 import { AuthRequest } from '../types';
 import { FreshdeskService, HubSpotService } from '../services/connection.services.js';
 
-export const getTicketsController = async (req: AuthRequest, res: Response) => {
+export const getTicketsController = async (req:AuthRequest, res:Response): Promise<void> => {
   try {
     const userId = req.user?.userId;
     const user = await User.findById(userId);
 
     if (!user || !user.freshdeskApiKey || !user.freshdeskDomain) {
-      return res.status(400).json({
+       res.status(400).json({
         success: false,
         message: 'Freshdesk integration not configured or user not found',
       });
+      return;
+    
     }
 
     const page = parseInt(req.query.page as string) || 1;
@@ -34,24 +36,28 @@ export const getTicketsController = async (req: AuthRequest, res: Response) => {
       success: false,
       message: 'Failed to fetch tickets',
     });
+    return;
+
   }
 };
 
-export const getTicketDetailsController = async (req: AuthRequest, res: Response) => {
+export const getTicketDetailsController = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.userId;
     const ticketId = parseInt(req.params.ticketId);
 
     if (isNaN(ticketId)) {
-      return res.status(400).json({ success: false, message: 'Invalid ticket ID' });
+       res.status(400).json({ success: false, message: 'Invalid ticket ID' })
+       return;
     }
 
     const user = await User.findById(userId);
     if (!user || !user.freshdeskApiKey || !user.freshdeskDomain) {
-      return res.status(400).json({
+       res.status(400).json({
         success: false,
         message: 'Freshdesk integration not configured or user not found',
       });
+      return;
     }
 
     const freshdeskService = new FreshdeskService(user.freshdeskDomain, user.freshdeskApiKey);
@@ -74,32 +80,35 @@ export const getTicketDetailsController = async (req: AuthRequest, res: Response
   }
 };
 
-export const getTicketContactController = async (req: AuthRequest, res: Response) => {
+export const getTicketContactController = async (req: AuthRequest, res: Response) : Promise<void> => {
   try {
     const userId = req.user?.userId;
     const ticketId = parseInt(req.params.ticketId);
 
     if (isNaN(ticketId)) {
-      return res.status(400).json({ success: false, message: 'Invalid ticket ID' });
+       res.status(400).json({ success: false, message: 'Invalid ticket ID' });
+       return;
     }
 
     const user = await User.findById(userId);
     if (!user || !user.freshdeskApiKey || !user.freshdeskDomain) {
-      return res.status(400).json({
+       res.status(400).json({
         success: false,
         message: 'Freshdesk integration not configured or user not found',
       });
+      return;
     }
 
     const freshdeskService = new FreshdeskService(user.freshdeskDomain, user.freshdeskApiKey);
     const ticket = await freshdeskService.getTicketById(ticketId);
 
     if (!ticket.requester?.email) {
-      return res.json({
+       res.json({
         success: true,
         message: 'No contact information available',
         data: { contact: null },
       });
+      return;
     }
 
     let contact = null;
