@@ -10,7 +10,7 @@ import {
 const webhookRoutes = express.Router();
 
 // Add raw body parser for webhook signature verification
-webhookRoutes.use('/freshdesk', express.raw({ type: 'application/json' }));
+// webhookRoutes.use('/freshdesk', express.raw({ type: 'application/json' }));
 
 // Freshdesk will POST to this endpoint
 webhookRoutes.post('/freshdesk', handleFreshdeskWebhook);
