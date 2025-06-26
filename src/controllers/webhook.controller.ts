@@ -88,6 +88,17 @@ export const handleFreshdeskWebhook = async (req: AuthRequest, res: Response) =>
           agent_name: agent?.name
         }, userId);
         break;
+         case 'ticket_reopened':
+        await handleTicketReopened({
+          ticket_id: ticket?.id,
+          ticket_url: ticket?.url,
+          ticket_subject: ticket?.subject,
+          ticket_status: ticket?.status,
+          requester_email: requester?.email,
+          agent_email: agent?.email,
+          agent_name: agent?.name
+        }, userId);
+        break;
 
       default:
         break;
@@ -135,7 +146,7 @@ const handleTicketCreated = async (ticketData: any, userId: string) => {
   try {
     await WebhookLog.create({
       userId,
-      event: 'ticket_created_processed',
+      event: 'ticket created',
       payload: {
         ticketId: ticketData.ticket_id,
         subject: ticketData.ticket_subject,
@@ -167,7 +178,7 @@ const handleTicketUpdated = async (ticketData: any, userId: string) => {
   try {
     await WebhookLog.create({
       userId,
-      event: 'ticket_updated_processed',
+      event: 'ticket updated from Open to Pending',
       payload: {
         ticketId: ticketData.ticket_id,
         status: ticketData.ticket_status,
@@ -186,7 +197,7 @@ const handleTicketResolved = async (ticketData: any, userId: string) => {
   try {
     await WebhookLog.create({
       userId,
-      event: 'ticket_resolved_processed',
+      event: 'ticket updated from Pending to Resolved',
       payload: {
         ticketId: ticketData.ticket_id,
         subject: ticketData.ticket_subject,
@@ -206,7 +217,7 @@ const handleTicketClosed = async (ticketData: any, userId: string) => {
   try {
     await WebhookLog.create({
       userId,
-      event: 'ticket_closed_processed',
+      event: 'ticket updated from Resolved to Closed',
       payload: {
         ticketId: ticketData.ticket_id,
         subject: ticketData.ticket_subject,
@@ -218,6 +229,37 @@ const handleTicketClosed = async (ticketData: any, userId: string) => {
       timestamp: new Date()
     });
   } catch (error) {
+    throw error;
+  }
+};
+const handleTicketReopened = async (ticketData: any, userId: string) => {
+  try {
+    await WebhookLog.create({
+      userId,
+      event: 'ticket Reopened',
+      payload: {
+        ticketId: ticketData.ticket_id,
+        subject: ticketData.ticket_subject,
+        requesterEmail: ticketData.requester_email,
+        status: ticketData.ticket_status,
+        priority: ticketData.ticket_priority,
+        processedAt: new Date()
+      },
+      source: 'freshdesk',
+      timestamp: new Date()
+    });
+  } catch (error) {
+    await WebhookLog.create({
+      userId,
+      event: 'ticket_created_error',
+      payload: {
+        ticketId: ticketData.ticket_id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        originalData: ticketData
+      },
+      source: 'freshdesk',
+      timestamp: new Date()
+    });
     throw error;
   }
 };
