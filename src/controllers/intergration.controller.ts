@@ -26,6 +26,20 @@ export const freshdeskIntegrationSaveController = async (req: AuthRequest, res: 
       return;
     }
 
+    // Check if another user already has the same Freshdesk API key
+    const existingUser = await User.findOne({
+      freshdeskApiKey: freshdeskApiKey,
+      _id: { $ne: userId } // Exclude current user
+    });
+
+    if (existingUser) {
+      res.status(409).json({
+        success: false,
+        message: "This Freshdesk API key is already in use by another user",
+      });
+      return;
+    }
+
     // Test Freshdesk connection
     const freshdeskService = new FreshdeskService(freshdeskDomain, freshdeskApiKey);
     const isConnected = await freshdeskService.testConnection();
@@ -59,13 +73,14 @@ export const freshdeskIntegrationSaveController = async (req: AuthRequest, res: 
     });
   }
 };
+
 export const hubspotIntegrationSaveController: RequestHandler = async (req: AuthRequest, res): Promise<void> => {
   try {
     const userId = req.user?.userId;
     const { hubspotAccessToken } = req.body;
 
     if (!hubspotAccessToken) {
-       res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "HubSpot Access Token is required",
       });
@@ -74,9 +89,23 @@ export const hubspotIntegrationSaveController: RequestHandler = async (req: Auth
 
     const user = await User.findById(userId);
     if (!user) {
-       res.status(404).json({
+      res.status(404).json({
         success: false,
         message: "User not found",
+      });
+      return;
+    }
+
+    // Check if another user already has the same HubSpot access token
+    const existingUser = await User.findOne({
+      hubspotAccessToken: hubspotAccessToken,
+      _id: { $ne: userId } // Exclude current user
+    });
+
+    if (existingUser) {
+      res.status(409).json({
+        success: false,
+        message: "This HubSpot access token is already in use by another user",
       });
       return;
     }
@@ -86,7 +115,7 @@ export const hubspotIntegrationSaveController: RequestHandler = async (req: Auth
     const isConnected = await hubspotService.testConnection();
 
     if (!isConnected) {
-       res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Failed to connect to HubSpot. Invalid token.",
       });
