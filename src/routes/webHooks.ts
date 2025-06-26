@@ -16,7 +16,7 @@ const webhookRoutes = express.Router();
 webhookRoutes.post('/freshdesk', handleFreshdeskWebhook);
 
 // Webhook logs endpoints (authenticated)
-webhookRoutes.get('/logs/:userId', authenticateToken, getWebhookLogs);
+webhookRoutes.get('/logs', authenticateToken, getWebhookLogs);
 
 
 export default webhookRoutes;

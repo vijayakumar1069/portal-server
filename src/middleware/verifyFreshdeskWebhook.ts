@@ -6,9 +6,7 @@ export const verifyFreshdeskWebhook = (req: Request, res: Response, next: NextFu
     const signature = req.headers['x-freshdesk-signature'] as string;
     const webhookSecret = process.env.FRESHDESK_WEBHOOK_SECRET;
     
-    console.log("Webhooks middleware called");
-    console.log("Received signature:", signature);
-    console.log("Webhook secret exists:", !!webhookSecret);
+ 
     
     if (webhookSecret && signature) {
       // Work with raw body for signature verification
@@ -18,10 +16,10 @@ export const verifyFreshdeskWebhook = (req: Request, res: Response, next: NextFu
         .update(rawBody)
         .digest('hex');
 
-      console.log("Expected signature:", expectedSignature);
+    
       
       if (signature !== expectedSignature) {
-        console.log("Signature mismatch!");
+    
         res.status(401).json({
           success: false,
           message: 'Invalid webhook signature'
@@ -32,7 +30,7 @@ export const verifyFreshdeskWebhook = (req: Request, res: Response, next: NextFu
       // Parse the JSON after signature verification
       try {
         req.body = JSON.parse(rawBody.toString());
-        console.log("Parsed JSON:", req.body);
+     
       } catch (parseError) {
         console.error("JSON parse error:", parseError);
         res.status(400).json({
@@ -42,7 +40,6 @@ export const verifyFreshdeskWebhook = (req: Request, res: Response, next: NextFu
         return; // Important: return void, don't return the response
       }
     } else {
-      console.log("Skipping signature verification - missing secret or signature");
       // If no signature verification is needed, ensure body is parsed
       if (Buffer.isBuffer(req.body)) {
         try {
@@ -58,7 +55,7 @@ export const verifyFreshdeskWebhook = (req: Request, res: Response, next: NextFu
       }
     }
     
-    console.log("Webhook verification successful");
+
     next();
   } catch (error) {
     console.error("Webhook verification error:", error);

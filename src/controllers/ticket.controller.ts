@@ -115,9 +115,9 @@ export const getTicketContactController = async (req: AuthRequest, res: Response
 
     if (user.hubspotAccessToken) {
       const hubspotService = new HubSpotService(user.hubspotAccessToken);
-      console.log("ticket.requester.email", ticket.requester.email)
+     
       contact = await hubspotService.getContactByEmail(ticket.requester.email);
-      console.log("contact", contact)
+    
     }
 
     res.json({

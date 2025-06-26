@@ -202,6 +202,7 @@ const handleTicketResolved = async (ticketData: any, userId: string) => {
         ticketId: ticketData.ticket_id,
         subject: ticketData.ticket_subject,
         requesterEmail: ticketData.requester_email,
+        status: ticketData.ticket_status,
         agentEmail: ticketData.agent_email,
         processedAt: new Date()
       },
@@ -221,6 +222,7 @@ const handleTicketClosed = async (ticketData: any, userId: string) => {
       payload: {
         ticketId: ticketData.ticket_id,
         subject: ticketData.ticket_subject,
+        status: ticketData.ticket_status,
         requesterEmail: ticketData.requester_email,
         agentEmail: ticketData.agent_email,
         processedAt: new Date()
@@ -241,6 +243,7 @@ const handleTicketReopened = async (ticketData: any, userId: string) => {
         ticketId: ticketData.ticket_id,
         subject: ticketData.ticket_subject,
         requesterEmail: ticketData.requester_email,
+        
         status: ticketData.ticket_status,
         priority: ticketData.ticket_priority,
         processedAt: new Date()
@@ -263,9 +266,9 @@ const handleTicketReopened = async (ticketData: any, userId: string) => {
     throw error;
   }
 };
-export const getWebhookLogs = async (req: Request, res: Response) => {
+export const getWebhookLogs = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId= req.user?.userId;
 
     const logs = await WebhookLog.find({ userId })
       .sort({ timestamp: -1 })

@@ -117,11 +117,33 @@ export const loginController: RequestHandler = async (req, res): Promise<void> =
   }
 }
 
-export const getUserController: RequestHandler = async (req:AuthRequest, res): Promise<void> => {
-    try {
-    const user = await User.findById(req.user?.userId);
+export const logoutController: RequestHandler = async (req, res): Promise<void> => {
+  try {
+    const token = req.body.token;
+
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: 'Access token required'
+      });
+      return;
+    }
+
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      res.status(500).json({
+        success: false,
+        message: 'Server configuration error'
+      });
+      return;
+    }
+
+    const decoded = jwt.verify(token, jwtSecret) as { userId: string; email: string };
+
+    // Verify user still exists
+    const user = await User.findById(decoded.userId);
     if (!user) {
-       res.status(404).json({
+      res.status(401).json({
         success: false,
         message: 'User not found'
       });
@@ -130,14 +152,17 @@ export const getUserController: RequestHandler = async (req:AuthRequest, res): P
 
     res.json({
       success: true,
-      message: 'User retrieved successfully',
-      data: { user: user.toJSON() }
+      message: 'Logout successful',
+      data: {
+        user: user.toJSON(),
+      },
+      token: null
     });
   } catch (error) {
-    console.error('Get user error:', error);
+    console.error('Logout error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get user'
+      message: 'Failed to logout'
     });
   }
-}
+};
