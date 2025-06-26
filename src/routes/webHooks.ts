@@ -10,6 +10,7 @@ import {
 import { verifyFreshdeskWebhook } from '../middleware/verifyFreshdeskWebhook.js';
 
 const webhookRoutes = express.Router();
+webhookRoutes.use('/freshdesk', express.raw({ type: 'application/json' }));
 
 // Freshdesk will POST to this endpoint
 webhookRoutes.post('/freshdesk',verifyFreshdeskWebhook, handleFreshdeskWebhook);
